@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	_ "image/jpeg"
+	_ "image/png"
 	"log"
 	"math"
 
@@ -15,15 +17,25 @@ import (
 
 var (
 	windowImage *ebiten.Image
+	tileImage   *ebiten.Image
 )
 
 func init() {
-	// Decode an image from the image file's byte slice.
-	img, _, err := image.Decode(bytes.NewReader(images.Window))
-	if err != nil {
-		log.Fatal(err)
+	{
+		img, _, err := image.Decode(bytes.NewReader(images.Window))
+		if err != nil {
+			log.Fatal(err)
+		}
+		windowImage = ebiten.NewImageFromImage(img)
 	}
-	windowImage = ebiten.NewImageFromImage(img)
+
+	{
+		img, _, err := image.Decode(bytes.NewReader(images.Background))
+		if err != nil {
+			log.Fatal(err)
+		}
+		tileImage = ebiten.NewImageFromImage(img)
+	}
 }
 
 type Game struct{}
@@ -34,16 +46,31 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	{
+		screenX := screen.Bounds().Bounds().Dx()
+		screenY := screen.Bounds().Bounds().Dy()
+		w := tileImage.Bounds().Dx()
+		h := tileImage.Bounds().Dy()
+
+		op := &ebiten.DrawImageOptions{}
+		for y := 0; y < screenY+h; y += h {
+			for x := 0; x < screenX+w; x += w {
+				screen.DrawImage(tileImage, op)
+				op.GeoM.Translate(float64(w), 0)
+			}
+			op.GeoM.Reset()
+			op.GeoM.Translate(0, float64(y))
+		}
+	}
+
+	{
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(100, 100)
 		screen.DrawImage(windowImage, op)
 	}
 
 	{
-		// windowWidth := 250
-		// windowHeight := 207
-		windowWidth := 400
-		windowHeight := 400
+		windowWidth := 200
+		windowHeight := 150
 
 		// 9スライス画像を3等分する
 		w3 := windowImage.Bounds().Dx()
