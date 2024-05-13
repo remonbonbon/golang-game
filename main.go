@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"image"
 	_ "image/jpeg"
 	_ "image/png"
 	"log"
@@ -11,31 +9,17 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 
-	images "myapp/img"
+	"myapp/geometry"
+	"myapp/render"
 	"myapp/ui"
 )
 
 var (
-	windowImage *ebiten.Image
-	tileImage   *ebiten.Image
+	imageLoader *render.ImageLoader
 )
 
 func init() {
-	{
-		img, _, err := image.Decode(bytes.NewReader(images.Window))
-		if err != nil {
-			log.Fatal(err)
-		}
-		windowImage = ebiten.NewImageFromImage(img)
-	}
-
-	{
-		img, _, err := image.Decode(bytes.NewReader(images.Background))
-		if err != nil {
-			log.Fatal(err)
-		}
-		tileImage = ebiten.NewImageFromImage(img)
-	}
+	imageLoader = render.NewImageLoader()
 }
 
 type Game struct{}
@@ -46,6 +30,8 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	{
+		tileImage := imageLoader.Load("resource/images/bg.png")
+
 		screenX := screen.Bounds().Bounds().Dx()
 		screenY := screen.Bounds().Bounds().Dy()
 		w := tileImage.Bounds().Dx()
@@ -62,23 +48,15 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 
+	windowImage := imageLoader.Load("resource/images/window.png")
+
 	{
-		window := ui.Window{}
-		window.WindowImage = windowImage
-		window.Height = 500
-		window.Width = 500
-		window.X = 50
-		window.Y = 50
+		window := ui.Window{WindowImage: windowImage, Box: geometry.Box{Width: 500, Height: 500, X: 50, Y: 50}}
 		window.Draw(screen)
 	}
 
 	{
-		window := ui.Window{}
-		window.WindowImage = windowImage
-		window.Height = 320
-		window.Width = 240
-		window.X = 100
-		window.Y = 300
+		window := ui.Window{WindowImage: windowImage, Box: geometry.Box{Width: 240, Height: 320, X: 100, Y: 300}}
 		window.Draw(screen)
 	}
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.ActualTPS()))
