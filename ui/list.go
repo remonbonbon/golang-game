@@ -4,10 +4,12 @@ import (
 	"image/color"
 	"log"
 	"math"
+	"myapp/geometry"
 	"myapp/render"
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"golang.org/x/text/language"
@@ -18,8 +20,12 @@ type List struct {
 	Parent          *Window
 	BackgroundImage *ebiten.Image
 
-	Scroll    float64
-	ScrollMax float64
+	Scroll       float64
+	ScrollMax    float64
+	ScrollBarBox geometry.Box
+
+	PrevMouseY int
+	Grabbed    bool
 }
 
 var japaneseFaceSource *text.GoTextFaceSource
@@ -40,6 +46,21 @@ func init() {
 func (l *List) Update() error {
 	_, dy := ebiten.Wheel()
 	l.Scroll += -dy * 30
+
+	mx, my := ebiten.CursorPosition()
+	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+		if l.ScrollBarBox.IsInside(mx, my) {
+			if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+				l.Grabbed = true
+			}
+		}
+	} else {
+		l.Grabbed = false
+	}
+	if l.Grabbed {
+		l.Scroll += float64(my - l.PrevMouseY)
+	}
+	l.PrevMouseY = my
 
 	if l.ScrollMax < l.Scroll {
 		l.Scroll = l.ScrollMax
@@ -74,7 +95,7 @@ func (l *List) Draw(screen *ebiten.Image) {
 	// clipImage.Fill(color.Black)
 
 	l.ScrollMax = 0
-	color := color.RGBA{0x00, 0x00, 0xff, 0xff}
+	c := color.RGBA{0x00, 0x00, 0xff, 0xff}
 	for i, v := range l.Item {
 		const lineSpacing = 0
 		w, h := text.Measure(v, face, lineSpacing)
@@ -82,7 +103,7 @@ func (l *List) Draw(screen *ebiten.Image) {
 		offsetY = int(math.Round(h))
 		l.ScrollMax += float64(offsetY)
 
-		vector.StrokeRect(clipImage, float32(x), float32(y), float32(w), float32(h), 1, color, false)
+		vector.StrokeRect(clipImage, float32(x), float32(y), float32(w), float32(h), 1, c, false)
 
 		op := &text.DrawOptions{}
 		op.GeoM.Translate(float64(x), float64(y))
@@ -101,6 +122,23 @@ func (l *List) Draw(screen *ebiten.Image) {
 	if 0 < l.ScrollMax {
 		barW := 20
 		barH := math.Min(100, float64(box2.Height)/3)
-		vector.DrawFilledRect(screen, float32(box2.X+box2.Width-barW), float32(float64(box2.Y)+l.Scroll/l.ScrollMax*(float64(box2.Height)-barH)), float32(barW), float32(barH), color, false)
+
+		l.ScrollBarBox = geometry.Box{
+			X:      (box2.X + box2.Width - barW),
+			Y:      box2.Y + int(l.Scroll/l.ScrollMax*(float64(box2.Height)-barH)),
+			Width:  barW,
+			Height: int(barH),
+		}
+
+		c2 := color.RGBA{0x00, 0x00, 0xff, 0xff}
+		mx, my := ebiten.CursorPosition()
+		if l.ScrollBarBox.IsInside(mx, my) {
+			c2 = color.RGBA{0x00, 0xff, 0xff, 0xff}
+		}
+
+		vector.DrawFilledRect(screen,
+			float32(l.ScrollBarBox.X), float32(l.ScrollBarBox.Y),
+			float32(l.ScrollBarBox.Width), float32(l.ScrollBarBox.Height),
+			c2, false)
 	}
 }

@@ -13,3 +13,7 @@ func (b *Box) Padding(padding int) Box {
 		X:      b.X + padding,
 		Y:      b.Y + padding}
 }
+
+func (b *Box) IsInside(x, y int) bool {
+	return b.X <= x && x <= b.X+b.Width && b.Y <= y && y <= b.Y+b.Height
+}
