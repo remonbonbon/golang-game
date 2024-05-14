@@ -9,6 +9,7 @@ import (
 )
 
 type ImageLoader struct {
+	// キー:ファイルパス, 値:画像
 	imgMap map[string]*ebiten.Image
 }
 

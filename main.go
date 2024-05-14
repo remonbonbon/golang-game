@@ -14,23 +14,23 @@ import (
 	"myapp/ui"
 )
 
-var (
+type Game struct {
 	imageLoader *render.ImageLoader
-)
-
-func init() {
-	imageLoader = render.NewImageLoader()
+	window      *ui.Window
+	list        *ui.List
 }
 
-type Game struct{}
-
 func (g *Game) Update() error {
+	if err := g.list.Update(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	{
-		tileImage := imageLoader.Load("resource/images/bg.png")
+		tileImage := g.imageLoader.Load("resource/images/bg.png")
 
 		screenX := screen.Bounds().Bounds().Dx()
 		screenY := screen.Bounds().Bounds().Dy()
@@ -48,18 +48,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	windowImage := imageLoader.Load("resource/images/window.png")
+	g.window.Draw(screen)
+	g.list.Draw(screen)
 
-	{
-		window := ui.Window{WindowImage: windowImage, Box: geometry.Box{Width: 500, Height: 500, X: 50, Y: 50}}
-		window.Draw(screen)
-	}
-
-	{
-		window := ui.Window{WindowImage: windowImage, Box: geometry.Box{Width: 240, Height: 320, X: 100, Y: 300}}
-		window.Draw(screen)
-	}
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.ActualTPS()))
+	msg := ""
+	msg += fmt.Sprintf("TPS: %0.2f\n", ebiten.ActualTPS())
+	msg += fmt.Sprintf("Scroll: %v\n", g.list.Scroll)
+	msg += fmt.Sprintf("ScrollMax: %v\n", g.list.ScrollMax)
+	ebitenutil.DebugPrint(screen, msg)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -69,7 +65,19 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 func main() {
 	ebiten.SetWindowSize(1280, 960)
 	ebiten.SetWindowTitle("Game")
-	if err := ebiten.RunGame(&Game{}); err != nil {
+
+	game := &Game{}
+	game.imageLoader = render.NewImageLoader()
+	windowImage := game.imageLoader.Load("resource/images/window.png")
+	game.window = &ui.Window{WindowImage: windowImage, Box: geometry.Box{Width: 400, Height: 600, X: 100, Y: 100}}
+	game.list = &ui.List{Parent: game.window, BackgroundImage: windowImage}
+	game.list.Item = make([]string, 0)
+	for i := 1; i < 50; i++ {
+		game.list.Item = append(game.list.Item, fmt.Sprintf("アイテム%d", i))
+	}
+	game.list.Item = append(game.list.Item, "最後のアイテム")
+
+	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
 }
