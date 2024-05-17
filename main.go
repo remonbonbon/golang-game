@@ -69,13 +69,14 @@ func main() {
 	game := &Game{}
 	game.imageLoader = render.NewImageLoader()
 	windowImage := game.imageLoader.Load("resource/images/window.png")
-	game.window = &ui.Window{WindowImage: windowImage, Box: geometry.Box{Width: 400, Height: 600, X: 100, Y: 100}}
+	game.window = &ui.Window{WindowImage: windowImage, WindowBox: geometry.Box{Width: 400, Height: 600, X: 100, Y: 100}}
 	game.list = &ui.List{Parent: game.window, BackgroundImage: windowImage}
-	game.list.Item = make([]string, 0)
+	game.list.Item = make([]ui.UIComponent, 0)
 	for i := 1; i < 50; i++ {
-		game.list.Item = append(game.list.Item, fmt.Sprintf("アイテム%d", i))
+		// game.list.Item = append(game.list.Item, fmt.Sprintf("アイテム%d", i))
+		game.list.Item = append(game.list.Item, ui.NewTextMessage(16, fmt.Sprintf("アイテム%d", i)))
 	}
-	game.list.Item = append(game.list.Item, "最後のアイテム")
+	game.list.Item = append(game.list.Item, ui.NewTextMessage(16, "最後のアイテム"))
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

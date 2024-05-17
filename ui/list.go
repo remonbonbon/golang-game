@@ -2,21 +2,17 @@ package ui
 
 import (
 	"image/color"
-	"log"
 	"math"
 	"myapp/geometry"
 	"myapp/render"
-	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
-	"golang.org/x/text/language"
 )
 
 type List struct {
-	Item            []string
+	Item            []UIComponent
 	Parent          *Window
 	BackgroundImage *ebiten.Image
 
@@ -26,21 +22,6 @@ type List struct {
 
 	PrevMouseY int
 	Grabbed    bool
-}
-
-var japaneseFaceSource *text.GoTextFaceSource
-
-func init() {
-	file, err := os.Open("./resource/fonts/rounded-mgenplus-1cp-regular.ttf")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	s, err := text.NewGoTextFaceSource(file)
-	if err != nil {
-		log.Fatal(err)
-	}
-	japaneseFaceSource = s
 }
 
 func (l *List) Update() error {
@@ -80,35 +61,25 @@ func (l *List) Draw(screen *ebiten.Image) {
 		return
 	}
 
-	box := l.Parent.Box.Padding(10)
+	box := l.Parent.Box().Padding(10)
 	render.DrawNineSlice(screen, l.BackgroundImage, box)
 	box2 := box.Padding(10)
 
-	face := &text.GoTextFace{
-		Source:   japaneseFaceSource,
-		Size:     16,
-		Language: language.Japanese,
-	}
 	offsetY := 0
 
 	clipImage := ebiten.NewImage(box2.Width, box2.Height)
-	// clipImage.Fill(color.Black)
 
 	l.ScrollMax = 0
-	c := color.RGBA{0x00, 0x00, 0xff, 0xff}
-	for i, v := range l.Item {
-		const lineSpacing = 0
-		w, h := text.Measure(v, face, lineSpacing)
+	// c := color.RGBA{0x00, 0x00, 0xff, 0xff}
+	for i, comp := range l.Item {
+		bb := comp.Box()
 		x, y := 0, offsetY*i-int(l.Scroll)
-		offsetY = int(math.Round(h))
+		offsetY = bb.Height
 		l.ScrollMax += float64(offsetY)
 
-		vector.StrokeRect(clipImage, float32(x), float32(y), float32(w), float32(h), 1, c, false)
+		// vector.StrokeRect(clipImage, float32(x), float32(y), float32(bb.Width), float32(bb.Height), 1, c, false)
 
-		op := &text.DrawOptions{}
-		op.GeoM.Translate(float64(x), float64(y))
-		op.LineSpacing = lineSpacing
-		text.Draw(clipImage, v, face, op)
+		comp.Move(x, y).Draw(clipImage)
 	}
 
 	l.ScrollMax -= float64(box2.Height - offsetY)

@@ -8,10 +8,15 @@ import (
 )
 
 type Window struct {
+	UIComponent
 	WindowImage *ebiten.Image
-	Box         geometry.Box
+	WindowBox   geometry.Box
 }
 
 func (win *Window) Draw(screen *ebiten.Image) {
-	render.DrawNineSlice(screen, win.WindowImage, win.Box)
+	render.DrawNineSlice(screen, win.WindowImage, win.WindowBox)
+}
+
+func (win *Window) Box() *geometry.Box {
+	return &win.WindowBox
 }

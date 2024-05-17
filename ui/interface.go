@@ -8,4 +8,5 @@ import (
 type UIComponent interface {
 	render.Drawable
 	geometry.Boxable
+	Move(x, y int) UIComponent
 }

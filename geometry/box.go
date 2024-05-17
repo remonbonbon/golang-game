@@ -1,7 +1,7 @@
 package geometry
 
 type Boxable interface {
-	Box() Box
+	Box() *Box
 }
 
 // 大きさと位置（左上）
